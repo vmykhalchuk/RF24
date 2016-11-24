@@ -314,6 +314,44 @@ uint8_t RF24::read_payload(void* buf, uint8_t data_len)
   return status;
 }
 
+#if not defined (RF24_LINUX)
+void RF24::read_payload_in_background_start(void* buf, uint8_t data_len) {
+  _in_bckgrnd__data_len = data_len;
+  _in_bckgrnd__current = reinterpret_cast<uint8_t*>(buf);
+  if(data_len > payload_size) _in_bckgrnd__data_len = payload_size;
+  _in_bckgrnd__blank_len = dynamic_payloads_enabled ? 0 : payload_size - data_len;
+
+  //printf("[Reading %u bytes %u blanks]",data_len,blank_len);
+  
+  IF_SERIAL_DEBUG( printf("[Reading %u bytes %u blanks]\n",_in_bckgrnd__data_len,_in_bckgrnd__blank_len); );
+  
+  beginTransaction();
+  _in_bckgrnd__status = _SPI.transfer( R_RX_PAYLOAD );
+  _in_bckgrnd__state = 0;
+}
+
+bool RF24::read_payload_in_background_finished() {
+  switch(_in_bckgrnd__state) {
+    case 0: 
+      if ( _in_bckgrnd__data_len-- ) {
+        *_in_bckgrnd__current++ = _SPI.transfer(0xFF);
+      } else {
+		_in_bckgrnd__state = 1;
+	  }
+      break;
+    case 1:
+      if ( _in_bckgrnd__blank_len-- ) {
+        _SPI.transfer(0xff);
+      } else {
+        endTransaction();
+		_in_bckgrnd__state = 2;
+	  }
+      break;
+  }
+  return _in_bckgrnd__state == 2;
+}
+#endif
+
 /****************************************************************************/
 
 uint8_t RF24::flush_rx(void)
@@ -1093,6 +1131,23 @@ void RF24::read( void* buf, uint8_t len ){
   write_register(NRF_STATUS,_BV(RX_DR) | _BV(MAX_RT) | _BV(TX_DS) );
 
 }
+
+
+#if not defined (RF24_LINUX)
+void RF24::readInBackgroundStart(void* buf, uint8_t len ) {
+  read_payload_in_background_start(buf, len);
+}
+
+bool RF24::readInBackgroundFinished() {
+  if (read_payload_in_background_finished()) {
+    //Clear the two possible interrupt flags with one command
+    write_register(NRF_STATUS,_BV(RX_DR) | _BV(MAX_RT) | _BV(TX_DS) );
+	return true;
+  } else {
+	return false;
+  }
+}
+#endif
 
 /****************************************************************************/
 

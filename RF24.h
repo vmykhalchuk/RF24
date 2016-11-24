@@ -77,6 +77,13 @@ private:
   uint8_t pipe0_reading_address[5]; /**< Last address set on pipe 0 for reading. */
   uint8_t addr_width; /**< The address width to use - 3,4 or 5 bytes. */
   
+#if not defined (RF24_LINUX)
+  uint8_t _in_bckgrnd__data_len;
+  uint8_t _in_bckgrnd__blank_len;
+  uint8_t _in_bckgrnd__status;
+  uint8_t* _in_bckgrnd__current;
+  uint8_t _in_bckgrnd__state;
+#endif
 
 protected:
   /**
@@ -199,6 +206,11 @@ public:
    */
   void read( void* buf, uint8_t len );
 
+#if not defined (RF24_LINUX)
+  void readInBackgroundStart(void* buf, uint8_t len);
+  bool readInBackgroundFinished(void);
+#endif
+  
   /**
    * Be sure to call openWritingPipe() first to set the destination
    * of where to write to.
@@ -1063,6 +1075,11 @@ private:
    */
   uint8_t read_payload(void* buf, uint8_t len);
 
+#if not defined (RF24_LINUX)
+  void read_payload_in_background_start(void* buf, uint8_t len);
+  bool read_payload_in_background_finished();
+#endif
+  
   /**
    * Empty the receive buffer
    *
