@@ -207,8 +207,8 @@ public:
   void read( void* buf, uint8_t len );
 
 #if not defined (RF24_LINUX)
-  void readInBackgroundStart(void* buf, uint8_t len);
-  bool readInBackgroundFinished(void);
+  void readUnblockedStart(void* buf, uint8_t len);
+  bool readUnblockedFinished(void);
 #endif
   
   /**

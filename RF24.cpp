@@ -1134,11 +1134,11 @@ void RF24::read( void* buf, uint8_t len ){
 
 
 #if not defined (RF24_LINUX)
-void RF24::readInBackgroundStart(void* buf, uint8_t len ) {
+void RF24::readUnblockedStart(void* buf, uint8_t len ) {
   read_payload_in_background_start(buf, len);
 }
 
-bool RF24::readInBackgroundFinished() {
+bool RF24::readUnblockedFinished() {
   if (read_payload_in_background_finished()) {
     //Clear the two possible interrupt flags with one command
     write_register(NRF_STATUS,_BV(RX_DR) | _BV(MAX_RT) | _BV(TX_DS) );
